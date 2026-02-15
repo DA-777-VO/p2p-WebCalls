@@ -1,33 +1,19 @@
-import React, {useEffect, useRef, useState} from 'react';
-import '../App.css'
+import React, { useEffect, useRef } from 'react';
 
-function VideoCall({ localStream, remoteStream, onEndCall }) {
+function VideoCall({
+                     roomId,
+                     username,
+                     localStream,
+                     remoteStream,
+                     inCall,
+                     isMuted,
+                     isVideoOff,
+                     onToggleMute,
+                     onToggleVideo,
+                     onLeaveRoom
+                   }) {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isVideoOff, setIsVideoOff] = useState(false);
-
-
-  const toggleMute = () => {
-    if (localStream) {
-      const audioTrack = localStream.getAudioTracks()[0];
-      if (audioTrack) {
-        audioTrack.enabled = !audioTrack.enabled;
-        setIsMuted(!audioTrack.enabled);
-      }
-    }
-  };
-
-  // Переключение камеры
-  const toggleVideo = () => {
-    if (localStream) {
-      const videoTrack = localStream.getVideoTracks()[0];
-      if (videoTrack) {
-        videoTrack.enabled = !videoTrack.enabled;
-        setIsVideoOff(!videoTrack.enabled);
-      }
-    }
-  };
 
   // Устанавливаем локальное видео
   useEffect(() => {
@@ -44,34 +30,92 @@ function VideoCall({ localStream, remoteStream, onEndCall }) {
   }, [remoteStream]);
 
   return (
-      <div className="video-call">
-        <div className="video-container">
-          <div className="remote-video-wrapper">
-            <video ref={remoteVideoRef} autoPlay playsInline />
-          </div>
-          <div className="local-video-wrapper">
-            <video ref={localVideoRef} autoPlay playsInline muted />
+      <div className="video-call-container">
+        {/* Шапка с информацией о комнате */}
+        <div className="room-header">
+          <div className="room-info">
+            <span className="room-code">Комната: {roomId}</span>
+            <span className="room-divider">|</span>
+            <span className="user-name">{username}</span>
           </div>
         </div>
 
-        <div className="controls">
-          <button
-              className={`control-button ${isMuted ? 'active' : ''}`}
-              onClick={toggleMute}
-          >
-            {isMuted ? '🔇 Микрофон выкл' : '🔊 Микрофон вкл'}
-          </button>
+        {/* Видео контейнер */}
+        <div className="videos-grid">
+          {/* Удаленное видео (собеседник) */}
+          {inCall && remoteStream ? (
+              <div className="video-wrapper remote-video-wrapper">
+                <video
+                    ref={remoteVideoRef}
+                    autoPlay
+                    playsInline
+                    className="video remote-video"
+                />
+              </div>
+          ) : (
+              <div className="video-wrapper waiting-wrapper">
+                <div className="waiting-content">
+                  <div className="waiting-icon">⏳</div>
+                  <h3>Ожидание собеседника...</h3>
+                  <p>Поделитесь кодом комнаты: <strong>{roomId}</strong></p>
+                </div>
+              </div>
+          )}
 
-          <button
-              className={`control-button ${isVideoOff ? 'active' : ''}`}
-              onClick={toggleVideo}
-          >
-            {isVideoOff ? '📹 Камера выкл' : '📷 Камера вкл'}
-          </button>
+          {/* Локальное видео (ваше) - плавающее в углу */}
+          <div className="local-video-container">
+            <div className="video-wrapper local-video-wrapper">
+              <video
+                  ref={localVideoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="video local-video"
+              />
+              {isVideoOff && (
+                  <div className="video-off-overlay">
+                    <div className="video-off-icon">📹</div>
+                  </div>
+              )}
+              <div className="local-label">{username}</div>
+            </div>
+          </div>
+        </div>
 
-          <button className="end-call-button" onClick={onEndCall}>
-            ❌ Завершить
-          </button>
+        {/* Панель управления (в стиле Google Meet) */}
+        <div className="controls-container">
+          <div className="controls">
+            {/* Микрофон */}
+            <button
+                className={`control-btn ${isMuted ? 'control-btn-danger' : ''}`}
+                onClick={onToggleMute}
+                title={isMuted ? 'Включить микрофон' : 'Выключить микрофон'}
+            >
+            <span className="control-icon">
+              {isMuted ? '🔇' : '🎤'}
+            </span>
+            </button>
+
+            {/* Камера */}
+            <button
+                className={`control-btn ${isVideoOff ? 'control-btn-danger' : ''}`}
+                onClick={onToggleVideo}
+                title={isVideoOff ? 'Включить камеру' : 'Выключить камеру'}
+            >
+            <span className="control-icon">
+              {isVideoOff ? '📹' : '📷'}
+            </span>
+            </button>
+
+            {/* Покинуть комнату */}
+            <button
+                className="control-btn control-btn-leave"
+                onClick={onLeaveRoom}
+                title="Покинуть комнату"
+            >
+              <span className="control-icon">📞</span>
+            </button>
+          </div>
         </div>
       </div>
   );
